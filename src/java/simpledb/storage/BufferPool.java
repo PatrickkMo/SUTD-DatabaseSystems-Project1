@@ -8,9 +8,10 @@ import simpledb.transaction.TransactionAbortedException;
 import simpledb.transaction.TransactionId;
 
 import java.io.*;
-
+import java.nio.Buffer;
 import java.util.concurrent.ConcurrentHashMap;
-
+import java.util.Iterator;
+import java.util.Map;
 /**
  * BufferPool manages the reading and writing of pages into memory from
  * disk. Access methods call into it to retrieve pages, and it fetches
@@ -22,16 +23,18 @@ import java.util.concurrent.ConcurrentHashMap;
  * 
  * @Threadsafe, all fields are final
  */
-public class BufferPool {
+public class BufferPool { 
     /** Bytes per page, including header. */
-    private static final int DEFAULT_PAGE_SIZE = 4096;
-
+    private static final int DEFAULT_PAGE_SIZE = 4096; // Number of bytes per page
     private static int pageSize = DEFAULT_PAGE_SIZE;
-    
     /** Default number of pages passed to the constructor. This is used by
     other classes. BufferPool should use the numPages argument to the
     constructor instead. */
     public static final int DEFAULT_PAGES = 50;
+    public static int pages = DEFAULT_PAGES;
+
+    public static ConcurrentHashMap<PageId, Page> bufferPoolPages = new ConcurrentHashMap<PageId, Page>();
+
 
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -39,7 +42,9 @@ public class BufferPool {
      * @param numPages maximum number of pages in this buffer pool.
      */
     public BufferPool(int numPages) {
-        // some code goes here
+        BufferPool.pages = numPages;
+        BufferPool.bufferPoolPages = new ConcurrentHashMap<PageId, Page>(numPages);
+        
     }
     
     public static int getPageSize() {
@@ -73,7 +78,44 @@ public class BufferPool {
      */
     public  Page getPage(TransactionId tid, PageId pid, Permissions perm)
         throws TransactionAbortedException, DbException {
-        // some code goes here
+        // Check if page exists within the bufferpool, if yes return the page from the buffer pool
+        if (BufferPool.bufferPoolPages.containsKey(pid)) {
+            return BufferPool.bufferPoolPages.get(pid);
+        } else {
+            DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
+            Page page = file.readPage(pid);
+
+            if (perm == Permissions.READ_WRITE) {
+
+                if (BufferPool.bufferPoolPages.mappingCount() == BufferPool.pages) {
+                    // Remove first element inside of buffer pool
+                    Iterator<Map.Entry<PageId,Page>> iterator = BufferPool.bufferPoolPages.entrySet().iterator();
+                    
+                }
+
+
+
+
+                BufferPool.bufferPoolPages.put(pid,page);
+
+            }
+            
+
+
+        }
+
+        // If page doesnt exist within bufferpool:
+
+        // Fetch the page from the disk
+        DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
+        Page page = file.readPage(pid);
+
+        // Add fetched page to the buffer pool
+
+        // If buffer is already full, evict a page
+        // .remove a page from bugger, and return page
+
+
         return null;
     }
 
