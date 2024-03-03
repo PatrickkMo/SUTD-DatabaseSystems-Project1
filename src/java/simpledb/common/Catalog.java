@@ -23,12 +23,43 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Catalog {
 
+    private class Table {
+        
+        public Table(DbFile file, String name, String pkeyField) {
+            this.file = file;
+            this.name = name;
+            this.pkeyField = pkeyField;
+        }
+
+        public DbFile getFile() {
+            return this.file;
+        }
+
+        public String getName() {
+            return this.name;
+        }
+
+        public String getPkeyField() {
+            return this.pkeyField;
+        }
+                
+        private DbFile file;
+        private String name;
+        private String pkeyField;
+    }
+
+    private HashMap<String, Table> nameToTable;
+    private HashMap<Integer, Table> idToTable;
     /**
      * Constructor.
      * Creates a new, empty catalog.
      */
+
+
+     // Initialising new catalog method
     public Catalog() {
-        // some code goes here
+        this.idToTable = new HashMap<Integer, Table>();
+        this.nameToTable = new HashMap<String,Table>();
     }
 
     /**
@@ -41,7 +72,9 @@ public class Catalog {
      * @param pkeyField the name of the primary key field
      */
     public void addTable(DbFile file, String name, String pkeyField) {
-        // some code goes here
+        Table newTable = new Table(file,name,pkeyField);
+        this.nameToTable.put(name, newTable);
+        this.idToTable.put(file.getId(),newTable );
     }
 
     public void addTable(DbFile file, String name) {
@@ -64,8 +97,11 @@ public class Catalog {
      * @throws NoSuchElementException if the table doesn't exist
      */
     public int getTableId(String name) throws NoSuchElementException {
-        // some code goes here
-        return 0;
+        if (this.nameToTable.containsKey(name)) {
+            return this.nameToTable.get(name).getFile().getId();
+        } else {
+            throw new NoSuchElementException("This element does not exist.");
+        }
     }
 
     /**
@@ -76,7 +112,19 @@ public class Catalog {
      */
     public TupleDesc getTupleDesc(int tableid) throws NoSuchElementException {
         // some code goes here
-        return null;
+        // Table table_item = this.idToTable.get(tableid);
+        // if (table_item == null) {
+        //     throw new NoSuchElementException("Non-existent table.");
+        // } else {
+        //     DbFile file = table_item.getFile();
+        //     return file.getTupleDesc();
+        // }
+
+        if (this.idToTable.containsKey(tableid)) {
+            return this.idToTable.get(tableid).getFile().getTupleDesc();
+        } else {
+            throw new NoSuchElementException("Non-existent table.");
+        }
     }
 
     /**
@@ -87,27 +135,45 @@ public class Catalog {
      */
     public DbFile getDatabaseFile(int tableid) throws NoSuchElementException {
         // some code goes here
-        return null;
+        Table table_item = this.idToTable.get(tableid);
+        if (table_item == null) {
+            throw new NoSuchElementException("Non-existent table.");
+        } else {
+            return table_item.getFile();
+        }
     }
 
     public String getPrimaryKey(int tableid) {
         // some code goes here
-        return null;
+        Table table_item = this.idToTable.get(tableid);
+        if (table_item == null) {
+            throw new NoSuchElementException("Non-existent table.");
+        } else {
+            return table_item.getPkeyField();
+        }
     }
 
     public Iterator<Integer> tableIdIterator() {
         // some code goes here
-        return null;
+        Set<Integer> keys = this.idToTable.keySet();
+        return keys.iterator();
     }
 
     public String getTableName(int id) {
         // some code goes here
-        return null;
+        Table table3 = this.idToTable.get(id);
+        if (table3 == null) {
+            throw new NoSuchElementException("Non-existent table.");
+        } else {
+            return table3.getName();
+        }
     }
     
     /** Delete all tables from the catalog */
     public void clear() {
         // some code goes here
+        this.idToTable.clear();
+        this.nameToTable.clear();
     }
     
     /**
