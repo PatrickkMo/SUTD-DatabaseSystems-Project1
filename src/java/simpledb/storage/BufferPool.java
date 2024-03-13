@@ -91,32 +91,17 @@ public class BufferPool {
                     // Remove first element inside of buffer pool
                     Iterator<Map.Entry<PageId,Page>> iterator = BufferPool.bufferPoolPages.entrySet().iterator();
                     
+                    if (iterator.hasNext()) {
+                        Map.Entry<PageId,Page> entry = iterator.next();
+                        iterator.remove();
+                    }
                 }
 
-
-
-
                 BufferPool.bufferPoolPages.put(pid,page);
-
             }
-            
 
-
+            return page;
         }
-
-        // If page doesnt exist within bufferpool:
-
-        // Fetch the page from the disk
-        DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
-        Page page = file.readPage(pid);
-
-        // Add fetched page to the buffer pool
-
-        // If buffer is already full, evict a page
-        // .remove a page from bugger, and return page
-
-
-        return null;
     }
 
     /**

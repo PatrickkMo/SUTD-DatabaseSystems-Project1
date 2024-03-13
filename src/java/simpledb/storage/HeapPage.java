@@ -7,6 +7,9 @@ import simpledb.common.Catalog;
 import simpledb.transaction.TransactionId;
 
 import java.util.*;
+
+import javax.print.DocFlavor.READER;
+
 import java.io.*;
 
 /**
@@ -44,9 +47,14 @@ public class HeapPage implements Page {
      * @see Catalog#getTupleDesc
      * @see BufferPool#getPageSize()
      */
+
     public HeapPage(HeapPageId id, byte[] data) throws IOException {
-        this.pid = id;
-        this.td = Database.getCatalog().getTupleDesc(id.getTableId());
+        this.pid = id; // Page ID of the current page 
+        this.td = Database.getCatalog().getTupleDesc(id.getTableId()); 
+        // Get catalogue from the current database, afterwards get the tuple description 
+        // from catalog associated to table ID of current page ID
+
+
         this.numSlots = getNumTuples();
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data));
 
@@ -57,6 +65,7 @@ public class HeapPage implements Page {
         
         tuples = new Tuple[numSlots];
         try{
+
             // allocate and read the actual records of this page
             for (int i=0; i<tuples.length; i++)
                 tuples[i] = readNextTuple(dis,i);
@@ -73,7 +82,7 @@ public class HeapPage implements Page {
     */
     private int getNumTuples() {        
         // some code goes here
-        return 0;
+        return (BufferPool.getPageSize() * 8) / (Tuple.SIZE * 8 + 1);
 
     }
 
@@ -82,10 +91,7 @@ public class HeapPage implements Page {
      * @return the number of bytes in the header of a page in a HeapFile with each tuple occupying tupleSize bytes
      */
     private int getHeaderSize() {        
-        
-        // some code goes here
-        return 0;
-                 
+        return (getNumTuples() + 7) / 8;    
     }
     
     /** Return a view of this page before it was modified
@@ -228,7 +234,7 @@ public class HeapPage implements Page {
     }
 
     /**
-     * Static method to generate a byte array corresponding to an empty
+     * Static method to generate a byte array corresponding to an emptyF
      * HeapPage.
      * Used to add new, empty pages to the file. Passing the results of
      * this method to the HeapPage constructor will create a HeapPage with
@@ -287,16 +293,19 @@ public class HeapPage implements Page {
      * Returns the number of empty slots on this page.
      */
     public int getNumEmptySlots() {
-        // some code goes here
-        return 0;
+       BitSet b = BitSet.valueOf(header);
+       int emptySlots = 0;
+       for(int i = 0; i < b.length(); i++) 
+        if(!b.get(i))
+            emptySlots++;
+        return emptySlots;
     }
 
     /**
      * Returns true if associated slot on this page is filled.
      */
     public boolean isSlotUsed(int i) {
-        // some code goes here
-        return false;
+       return  !BitSet.valueOf(header).get(i);
     }
 
     /**
@@ -307,13 +316,33 @@ public class HeapPage implements Page {
         // not necessary for lab1
     }
 
+    private class TupleIter implements  Iterator<Tuple> {
+        int pos = 0;
+        BitSet b = BitSet.valueOf(header);
+
+
+        @Override
+        public boolean hasNext() {
+            while(pos < b.length()) {
+                if(b.get(pos)) return true;
+                pos++;
+            }
+            return false;
+        }
+
+        @Override
+        public Tuple next() {
+            return tuples[pos];
+        }
+        
+    }
+
     /**
      * @return an iterator over all tuples on this page (calling remove on this iterator throws an UnsupportedOperationException)
      * (note that this iterator shouldn't return tuples in empty slots!)
      */
     public Iterator<Tuple> iterator() {
-        // some code goes here
-        return null;
+        return new TupleIter();
     }
 
 }
